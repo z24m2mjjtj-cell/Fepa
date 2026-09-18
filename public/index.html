@@ -146,17 +146,44 @@ function addMessage(role,text){const div=document.createElement('div');div.class
 async function sendMessage(text){
   if(!text.trim())return;
   addMessage('user',text);history.push({role:'user',content:text});chatInput.value='';chatSend.disabled=true;chatChips.style.display='none';
-  const thinking=addMessage('assistant','Thinking…');
+  const bubble=addMessage('assistant','Thinking…');
+  let answer='',streamError=null;
   try{
-    /* IMPORTANT: replace this direct browser request with your secure FEPA backend endpoint.
-       Example: fetch('/api/chat', { ... }) where the AI API key is stored server-side. */
     const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
-    const data=await response.json();
-    const textBlock=(data.content||[]).map(b=>b.text||'').join('\n').trim();
-    thinking.textContent=textBlock||"Something went wrong on that request — try asking again.";
-    if(textBlock)history.push({role:'assistant',content:textBlock});
-  }catch(err){thinking.textContent="Couldn't reach the assistant just now — try again in a moment.";}
-  finally{chatSend.disabled=false;}
+    if(!response.ok||!response.body){
+      const detail=await response.json().catch(()=>({}));
+      bubble.textContent=detail.error||"Something went wrong on that request — try asking again.";
+      return;
+    }
+    const reader=response.body.getReader(),decoder=new TextDecoder();
+    let buffer='';
+    for(;;){
+      const {done,value}=await reader.read();
+      if(done)break;
+      buffer+=decoder.decode(value,{stream:true});
+      const frames=buffer.split('\n\n');
+      buffer=frames.pop()||'';
+      for(const frame of frames){
+        let name='message';const data=[];
+        for(const line of frame.split('\n')){
+          if(line.startsWith('event:'))name=line.slice(6).trim();
+          else if(line.startsWith('data:'))data.push(line.slice(5).trim());
+        }
+        if(!data.length)continue;
+        let payload;
+        try{payload=JSON.parse(data.join('\n'));}catch(e){continue;}
+        if(name==='delta'&&payload.text){
+          answer+=payload.text;
+          bubble.textContent=answer;
+          chatBody.scrollTop=chatBody.scrollHeight;
+        }else if(name==='error'){streamError=payload.message;}
+      }
+    }
+    if(answer)history.push({role:'assistant',content:answer});
+    else bubble.textContent=streamError||"The assistant didn't have a reply for that — try rephrasing.";
+  }catch(err){
+    if(!answer)bubble.textContent="Couldn't reach the assistant just now — try again in a moment.";
+  }finally{chatSend.disabled=false;}
 }
 chatSend.addEventListener('click',()=>sendMessage(chatInput.value));
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage(chatInput.value)});
