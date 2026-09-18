@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access unlocked — EIN-trepreneur AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1E2229;--parchment:#EFE8D8;--gold:#C08A2E;--teal:#3E6259}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--parchment);font-family:Inter,sans-serif;line-height:1.55;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:28px}
+  .card{max-width:520px;text-align:center}
+  h1{font-family:Fraunces,serif;font-weight:500;font-size:2rem;margin:0 0 14px}
+  p{color:rgba(239,232,216,.8);margin:0 0 18px}
+  .status{font-size:.92rem;padding:14px 16px;border-radius:4px;margin-bottom:22px}
+  .ok{border:1px solid rgba(62,98,89,.7);background:rgba(62,98,89,.16)}
+  .bad{border:1px solid rgba(192,138,46,.6);background:rgba(192,138,46,.1)}
+  a.btn{display:inline-block;background:var(--gold);color:var(--ink);padding:12px 22px;border-radius:3px;font-size:.9rem;font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1 id="heading">Checking your access…</h1>
+  <div class="status" id="status">One moment.</div>
+  <p id="detail"></p>
+  <a class="btn" href="/">Open EIN-trepreneur AI</a>
+</div>
+<script>
+(async function(){
+  const heading=document.getElementById('heading');
+  const status=document.getElementById('status');
+  const detail=document.getElementById('detail');
+
+  // The token arrives in the URL fragment so it is never sent to the server
+  // in a request line and never lands in access logs or Referer headers.
+  const params=new URLSearchParams(location.hash.replace(/^#/,''));
+  const token=params.get('token');
+
+  if(!token){
+    heading.textContent='No access link found';
+    status.className='status bad';
+    status.textContent='This page needs the link from your purchase email.';
+    return;
+  }
+
+  try{
+    const res=await fetch('/api/access?token='+encodeURIComponent(token));
+    const data=await res.json();
+    if(!data.valid)throw new Error('invalid');
+    localStorage.setItem('fepa_access_token',token);
+    history.replaceState(null,'',location.pathname);
+    heading.textContent='You’re all set';
+    status.className='status ok';
+    status.textContent='Access unlocked on this device. Ask EIN-trepreneur AI anything.';
+    detail.textContent='Keep your emailed link — use it to unlock any other device.';
+  }catch(err){
+    heading.textContent='That link didn’t work';
+    status.className='status bad';
+    status.textContent='It may be incomplete or out of date. Contact FEPA LLC and we’ll sort it out.';
+  }
+})();
+</script>
+</body>
+</html>

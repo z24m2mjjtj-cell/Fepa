@@ -63,7 +63,11 @@
   .plan ul{list-style:none;padding:0;margin:18px 0 24px;flex:1}
   .plan li{font-size:.88rem;padding:7px 0;border-top:1px solid rgba(30,34,41,.1)}
   .plan li:first-child{border-top:none}
-  .plan-btn{text-align:center;background:var(--gold);color:var(--ink);padding:12px;border-radius:3px;font-size:.88rem;font-weight:600;text-decoration:none}
+  .plan-btn{text-align:center;background:var(--gold);color:var(--ink);padding:12px;border-radius:3px;font-size:.88rem;font-weight:600;text-decoration:none;cursor:pointer}
+  .plan-btn[aria-disabled="true"]{opacity:.6;cursor:default}
+  .checkout-note{font-size:.8rem;color:rgba(30,34,41,.62);margin:10px 0 0;min-height:1em}
+  .paywall{align-self:center;text-align:center;font-size:.85rem;background:rgba(192,138,46,.14);border:1px solid rgba(192,138,46,.5);color:var(--ink);padding:10px 14px;border-radius:3px;max-width:92%}
+  .paywall a{color:var(--ink);font-weight:600}
   .disclaimer{font-size:.85rem;color:rgba(239,232,216,.55);max-width:70ch}
   footer{padding:36px 0 50px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;font-size:.85rem;color:rgba(239,232,216,.6)}
   footer h4{color:var(--parchment);font-size:.85rem;margin:0 0 8px;font-family:Inter,sans-serif;font-weight:600}
@@ -93,7 +97,7 @@
 
     <div class="chat-panel">
       <div class="chat-head"><div class="chat-dot"></div><div><div class="chat-head-text">EIN-trepreneur AI — live demo</div><div class="chat-head-sub">Try a real question below</div></div></div>
-      <div class="chat-body" id="chatBody"><div class="msg system-note">This is a working demo — ask it something real.</div></div>
+      <div class="chat-body" id="chatBody"><div class="msg system-note">This is a working demo — your first few questions are free.</div></div>
       <div class="chat-suggestions" id="chatChips">
         <div class="chip" data-q="How do I price a freelance web design project?">Pricing a project</div>
         <div class="chip" data-q="How do I follow up with a client who hasn't paid without sounding pushy?">Chasing a late payment</div>
@@ -126,10 +130,11 @@
           <li>Practical business-credit and financing-readiness guidance</li>
           <li>Tools and resources for building your business</li>
         </ul>
-        <a class="plan-btn" href="#">Get EIN-trepreneur AI — $100</a>
+        <a class="plan-btn" href="#" id="buyBtn">Get EIN-trepreneur AI — $100</a>
+        <p class="checkout-note" id="checkoutNote"></p>
       </div>
     </div>
-    <p class="disclaimer" style="margin-top:26px;">This page is configured as a one-time $100 purchase. A real checkout still needs to be connected to a payment processor using a server-side integration. The assistant provides general business, professional, and social guidance; it isn't a lawyer, accountant, or financial advisor. Confirm legal, tax, lending, and regulatory specifics with the appropriate professional or institution.</p>
+    <p class="disclaimer" style="margin-top:26px;">Payment is a single $100 charge handled by Stripe — no subscription and no recurring charges. After checkout we email an access link that unlocks the assistant on any device. The assistant provides general business, professional, and social guidance; it isn't a lawyer, accountant, or financial advisor. Confirm legal, tax, lending, and regulatory specifics with the appropriate professional or institution.</p>
   </section>
 
   <footer>
@@ -142,25 +147,97 @@
 <script>
 const chatBody=document.getElementById('chatBody'),chatInput=document.getElementById('chatInput'),chatSend=document.getElementById('chatSend'),chatChips=document.getElementById('chatChips');
 let history=[];
+function accessToken(){try{return localStorage.getItem('fepa_access_token');}catch(e){return null;}}
 function addMessage(role,text){const div=document.createElement('div');div.className='msg '+role;div.textContent=text;chatBody.appendChild(div);chatBody.scrollTop=chatBody.scrollHeight;return div;}
+function showPaywall(message){
+  const div=document.createElement('div');
+  div.className='paywall';
+  div.textContent=message+' ';
+  const link=document.createElement('a');
+  link.href='#pricing';link.textContent='Get full access — $100';
+  div.appendChild(link);
+  chatBody.appendChild(div);
+  chatBody.scrollTop=chatBody.scrollHeight;
+}
 async function sendMessage(text){
   if(!text.trim())return;
   addMessage('user',text);history.push({role:'user',content:text});chatInput.value='';chatSend.disabled=true;chatChips.style.display='none';
-  const thinking=addMessage('assistant','Thinking…');
+  const bubble=addMessage('assistant','Thinking…');
+  let answer='',streamError=null;
   try{
-    /* IMPORTANT: replace this direct browser request with your secure FEPA backend endpoint.
-       Example: fetch('/api/chat', { ... }) where the AI API key is stored server-side. */
-    const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
-    const data=await response.json();
-    const textBlock=(data.content||[]).map(b=>b.text||'').join('\n').trim();
-    thinking.textContent=textBlock||"Something went wrong on that request — try asking again.";
-    if(textBlock)history.push({role:'assistant',content:textBlock});
-  }catch(err){thinking.textContent="Couldn't reach the assistant just now — try again in a moment.";}
-  finally{chatSend.disabled=false;}
+    const headers={'Content-Type':'application/json'};
+    const token=accessToken();
+    if(token)headers['Authorization']='Bearer '+token;
+    const response=await fetch('/api/chat',{method:'POST',headers,body:JSON.stringify({messages:history})});
+    if(!response.ok||!response.body){
+      const detail=await response.json().catch(()=>({}));
+      if(response.status===402){
+        bubble.remove();
+        history.pop();
+        showPaywall(detail.error||"You've used up the free demo.");
+      }else{
+        bubble.textContent=detail.error||"Something went wrong on that request — try asking again.";
+      }
+      return;
+    }
+    const reader=response.body.getReader(),decoder=new TextDecoder();
+    let buffer='';
+    for(;;){
+      const {done,value}=await reader.read();
+      if(done)break;
+      buffer+=decoder.decode(value,{stream:true});
+      const frames=buffer.split('\n\n');
+      buffer=frames.pop()||'';
+      for(const frame of frames){
+        let name='message';const data=[];
+        for(const line of frame.split('\n')){
+          if(line.startsWith('event:'))name=line.slice(6).trim();
+          else if(line.startsWith('data:'))data.push(line.slice(5).trim());
+        }
+        if(!data.length)continue;
+        let payload;
+        try{payload=JSON.parse(data.join('\n'));}catch(e){continue;}
+        if(name==='delta'&&payload.text){
+          answer+=payload.text;
+          bubble.textContent=answer;
+          chatBody.scrollTop=chatBody.scrollHeight;
+        }else if(name==='error'){streamError=payload.message;}
+      }
+    }
+    if(answer)history.push({role:'assistant',content:answer});
+    else bubble.textContent=streamError||"The assistant didn't have a reply for that — try rephrasing.";
+  }catch(err){
+    if(!answer)bubble.textContent="Couldn't reach the assistant just now — try again in a moment.";
+  }finally{chatSend.disabled=false;}
 }
 chatSend.addEventListener('click',()=>sendMessage(chatInput.value));
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage(chatInput.value)});
 chatChips.querySelectorAll('.chip').forEach(chip=>chip.addEventListener('click',()=>sendMessage(chip.getAttribute('data-q'))));
+
+const buyBtn=document.getElementById('buyBtn'),checkoutNote=document.getElementById('checkoutNote');
+buyBtn.addEventListener('click',async e=>{
+  e.preventDefault();
+  if(buyBtn.getAttribute('aria-disabled')==='true')return;
+  buyBtn.setAttribute('aria-disabled','true');
+  buyBtn.textContent='Opening secure checkout…';
+  checkoutNote.textContent='';
+  try{
+    const res=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const data=await res.json();
+    if(!res.ok||!data.url)throw new Error(data.error||'checkout unavailable');
+    location.href=data.url;
+  }catch(err){
+    buyBtn.removeAttribute('aria-disabled');
+    buyBtn.textContent='Get EIN-trepreneur AI — $100';
+    checkoutNote.textContent=err.message||'Couldn’t open checkout — please try again.';
+  }
+});
+
+if(accessToken()){
+  buyBtn.textContent='You already have full access';
+  buyBtn.setAttribute('aria-disabled','true');
+  checkoutNote.textContent='Unlocked on this device.';
+}
 </script>
 </body>
 </html>

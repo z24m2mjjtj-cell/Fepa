@@ -1,0 +1,27 @@
+{
+  "name": "fepa-ein-trepreneur-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "EIN-trepreneur AI landing page and chat backend for FEPA LLC",
+  "license": "BSL-1.0",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.126.0",
+    "express": "^5.1.0",
+    "nodemailer": "^10.0.10",
+    "stripe": "^22.6.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "@types/nodemailer": "^8.0.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
