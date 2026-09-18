@@ -1,5 +1,10 @@
 node_modules/
 dist/
+
+# Agent tooling (Stripe docs skills), not product code
+.agents/
+.claude/
+skills-lock.json
 .env
 .env.local
 *.log

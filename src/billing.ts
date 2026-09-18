@@ -38,6 +38,7 @@ export async function createCheckoutSession(req: Request, res: Response) {
   try {
     const session = await client.checkout.sessions.create({
       mode: "payment",
+      integration_identifier: "fepa-ein-ai-qkwzrmtb",
       line_items: [
         {
           quantity: 1,
@@ -100,29 +101,59 @@ export async function handleStripeWebhook(req: Request, res: Response) {
     return;
   }
 
-  if (event.type !== "checkout.session.completed") {
+  if (event.type === "checkout.session.async_payment_failed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    console.warn("[stripe webhook] async payment failed", session.id);
+    res.json({ received: true });
+    return;
+  }
+
+  const fulfillable =
+    event.type === "checkout.session.completed" ||
+    event.type === "checkout.session.async_payment_succeeded";
+  if (!fulfillable) {
     res.json({ received: true });
     return;
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
-  if (session.payment_status !== "paid") {
+
+  // Delayed-notification methods (bank debits, Cash App, SEPA) complete the
+  // session while payment is still pending, then settle hours or days later via
+  // async_payment_succeeded. Fulfilling on `completed` alone would grant access
+  // to payments that never clear and miss the ones that do.
+  if (session.payment_status === "unpaid") {
     res.json({ received: true });
     return;
   }
+
+  await fulfill(session, secret, siteUrl(req));
+  res.json({ received: true });
+}
+
+// Stripe retries deliveries, and one purchase legitimately produces both a
+// completed and an async_payment_succeeded event, so fulfillment is keyed by
+// session id to avoid mailing the same buyer twice.
+const fulfilledSessions = new Set<string>();
+
+async function fulfill(
+  session: Stripe.Checkout.Session,
+  secret: string,
+  base: string,
+): Promise<void> {
+  if (fulfilledSessions.has(session.id)) return;
 
   const email =
     session.customer_details?.email ?? session.customer_email ?? null;
   if (!email) {
     console.error("[stripe webhook] paid session has no email", session.id);
-    // Acknowledge anyway: retrying will not conjure an address, and an
-    // unacknowledged event makes Stripe redeliver forever.
-    res.json({ received: true });
     return;
   }
 
+  fulfilledSessions.add(session.id);
+
   const token = mintAccessToken(email, secret);
-  const accessUrl = `${siteUrl(req)}/access.html#token=${encodeURIComponent(token)}`;
+  const accessUrl = `${base}/access.html#token=${encodeURIComponent(token)}`;
 
   try {
     await sendAccessEmail(email, accessUrl);
@@ -130,6 +161,4 @@ export async function handleStripeWebhook(req: Request, res: Response) {
     // The link is logged by the mailer fallback, so it is recoverable by hand.
     console.error("[stripe webhook] failed to send access email", err);
   }
-
-  res.json({ received: true });
 }
