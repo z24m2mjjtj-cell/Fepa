@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EIN-trepreneur AI — FEPA LLC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#1E2229; --parchment:#EFE8D8; --gold:#C08A2E;
+    --teal:#3E6259; --signal:#5B7FDE; --paper:#FAF7EF;
+    --line:rgba(239,232,216,.14);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--parchment);font-family:Inter,sans-serif;line-height:1.55}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+  h1,h2,h3{font-family:Fraunces,serif;font-weight:500;margin:0}
+  nav{display:flex;justify-content:space-between;align-items:center;padding:26px 0}
+  .brand{font-family:Fraunces,serif;font-size:1.2rem}.brand span{color:var(--gold)}
+  .brand-sub{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(239,232,216,.5);margin-top:2px}
+  nav a{color:var(--parchment);text-decoration:none;font-size:.92rem;margin-left:26px;opacity:.85}
+  nav a:hover{opacity:1}
+  .hero{padding:44px 0 80px;display:grid;grid-template-columns:.95fr 1.05fr;gap:48px;align-items:start}
+  .pitch-tag{display:inline-block;background:var(--signal);color:#fff;font-size:.8rem;font-weight:600;padding:6px 14px;border-radius:3px;margin-bottom:20px}
+  .hero h1{font-size:clamp(2rem,3.6vw,2.9rem);line-height:1.16;max-width:14ch}
+  .hero p.lede{max-width:42ch;font-size:1.04rem;color:rgba(239,232,216,.8);margin-top:20px}
+  .hero-facts{list-style:none;padding:0;margin:28px 0 0;display:flex;flex-direction:column;gap:10px}
+  .hero-facts li{font-size:.92rem;color:rgba(239,232,216,.75);padding-left:20px;position:relative}
+  .hero-facts li::before{content:"—";position:absolute;left:0;color:var(--gold)}
+  .offer{margin-top:26px;padding:18px 20px;border:1px solid rgba(192,138,46,.55);background:rgba(192,138,46,.08);border-radius:4px;max-width:430px}
+  .offer strong{display:block;font-family:Fraunces,serif;font-size:1.45rem;color:var(--gold)}
+  .offer span{display:block;font-size:.88rem;margin-top:4px;color:rgba(239,232,216,.82)}
+  .chat-panel{background:var(--paper);color:var(--ink);border-radius:4px;box-shadow:0 24px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;height:480px;overflow:hidden}
+  .chat-head{padding:16px 20px;border-bottom:1px solid rgba(30,34,41,.12);display:flex;align-items:center;gap:10px}
+  .chat-dot{width:9px;height:9px;border-radius:50%;background:var(--signal)}
+  .chat-head-text{font-size:.85rem;font-weight:600}.chat-head-sub{font-size:.72rem;color:rgba(30,34,41,.55)}
+  .chat-body{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+  .msg{max-width:85%;font-size:.92rem;padding:10px 14px;border-radius:3px;line-height:1.45;white-space:pre-wrap}
+  .msg.user{align-self:flex-end;background:var(--signal);color:#fff}
+  .msg.assistant{align-self:flex-start;background:rgba(30,34,41,.06);color:var(--ink)}
+  .msg.system-note{align-self:center;font-size:.78rem;color:rgba(30,34,41,.45);font-style:italic}
+  .chat-input-row{display:flex;gap:8px;padding:14px;border-top:1px solid rgba(30,34,41,.12)}
+  .chat-input-row input{flex:1;border:1px solid rgba(30,34,41,.18);border-radius:3px;padding:10px 12px;font-family:Inter,sans-serif;font-size:.9rem}
+  .chat-send{background:var(--ink);color:var(--parchment);border:none;border-radius:3px;padding:0 18px;font-size:.85rem;font-weight:600;cursor:pointer}
+  .chat-send:disabled{opacity:.5;cursor:default}
+  .chat-suggestions{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 12px}
+  .chip{font-size:.78rem;background:rgba(30,34,41,.06);border:1px solid rgba(30,34,41,.12);border-radius:3px;padding:6px 10px;cursor:pointer;color:var(--ink)}
+  .chip:hover{background:rgba(30,34,41,.1)}
+  section{padding:60px 0;border-top:1px solid var(--line)}
+  .section-head{max-width:56ch;margin-bottom:38px}.section-head h2{font-size:clamp(1.5rem,2.4vw,2rem)}
+  .section-head p{color:rgba(239,232,216,.75);margin-top:12px;font-size:1rem}
+  .skill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+  .skill-card h3{font-size:1.08rem;color:var(--gold);margin-bottom:10px}
+  .skill-card p{font-size:.93rem;color:rgba(239,232,216,.78);margin:0}
+  .pricing-grid{display:grid;grid-template-columns:1fr;gap:24px;max-width:520px}
+  .plan{background:var(--paper);color:var(--ink);border-radius:4px;padding:30px 26px;display:flex;flex-direction:column}
+  .plan.featured{outline:2px solid var(--gold)}
+  .plan-name{font-family:Fraunces,serif;font-size:1.35rem}
+  .plan-price{font-family:Fraunces,serif;font-size:2.8rem;margin:10px 0 2px}
+  .plan-price span{font-size:.95rem;font-family:Inter,sans-serif;color:rgba(30,34,41,.55)}
+  .one-time{font-size:.82rem;font-weight:600;color:var(--teal);margin-bottom:10px}
+  .plan ul{list-style:none;padding:0;margin:18px 0 24px;flex:1}
+  .plan li{font-size:.88rem;padding:7px 0;border-top:1px solid rgba(30,34,41,.1)}
+  .plan li:first-child{border-top:none}
+  .plan-btn{text-align:center;background:var(--gold);color:var(--ink);padding:12px;border-radius:3px;font-size:.88rem;font-weight:600;text-decoration:none}
+  .disclaimer{font-size:.85rem;color:rgba(239,232,216,.55);max-width:70ch}
+  footer{padding:36px 0 50px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;font-size:.85rem;color:rgba(239,232,216,.6)}
+  footer h4{color:var(--parchment);font-size:.85rem;margin:0 0 8px;font-family:Inter,sans-serif;font-weight:600}
+  footer p{margin:4px 0}
+  @media(max-width:900px){.hero{grid-template-columns:1fr}.skill-grid{grid-template-columns:1fr}.chat-panel{height:420px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div><div class="brand">FEPA <span>LLC</span></div><div class="brand-sub">EIN-trepreneur AI</div></div>
+    <div><a href="#try">Try it</a><a href="#skills">What it knows</a><a href="#pricing">Get Access</a></div>
+  </nav>
+
+  <section class="hero" id="try" style="border-top:none;padding-top:10px;">
+    <div>
+      <span class="pitch-tag">Become An EIN-trepreneur Today!!</span>
+      <h1>A personal assistant for the business you're actually building.</h1>
+      <p class="lede">Ask it how to price a proposal, word a hard email, read a room in a client meeting, or take your next step toward funding — and get a straight, specific answer, not a generic pep talk.</p>
+      <ul class="hero-facts">
+        <li>Business skills: pricing, contracts, cash flow, financing readiness</li>
+        <li>Professional skills: emails, negotiations, meetings, hiring</li>
+        <li>Social skills: networking, hard conversations, reading a room</li>
+      </ul>
+      <div class="offer"><strong>$100 — One-Time Access</strong><span>No recurring payments. Pay once and get access to the EIN-trepreneur AI experience.</span></div>
+    </div>
+
+    <div class="chat-panel">
+      <div class="chat-head"><div class="chat-dot"></div><div><div class="chat-head-text">EIN-trepreneur AI — live demo</div><div class="chat-head-sub">Try a real question below</div></div></div>
+      <div class="chat-body" id="chatBody"><div class="msg system-note">This is a working demo — ask it something real.</div></div>
+      <div class="chat-suggestions" id="chatChips">
+        <div class="chip" data-q="How do I price a freelance web design project?">Pricing a project</div>
+        <div class="chip" data-q="How do I follow up with a client who hasn't paid without sounding pushy?">Chasing a late payment</div>
+        <div class="chip" data-q="How do I introduce myself at a networking event without sounding rehearsed?">Networking intro</div>
+      </div>
+      <div class="chat-input-row"><input type="text" id="chatInput" placeholder="Ask a business, professional, or social question…" /><button class="chat-send" id="chatSend">Ask</button></div>
+    </div>
+  </section>
+
+  <section id="skills">
+    <div class="section-head"><h2>Three areas, one assistant</h2><p>Most tools cover one of these. Running a business well means all three at once.</p></div>
+    <div class="skill-grid">
+      <div class="skill-card"><h3>Business</h3><p>Pricing, contracts, cash flow, vendor terms, and practical steps toward business credit and financing readiness — grounded in how these things actually work.</p></div>
+      <div class="skill-card"><h3>Professional</h3><p>Emails that land right, meetings that stay on track, negotiations, proposals, and thinking through the moment before it happens.</p></div>
+      <div class="skill-card"><h3>Social</h3><p>Networking, difficult conversations, client communication, and reading what's actually going on in a room — the soft skills that support business relationships.</p></div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="section-head"><h2>One payment. No recurring payments.</h2><p>Get EIN-trepreneur AI access for a single $100 payment. No monthly subscription and no automatic recurring charges.</p></div>
+    <div class="pricing-grid">
+      <div class="plan featured">
+        <div class="plan-name">EIN-trepreneur AI — Complete Access</div>
+        <div class="plan-price">$100</div>
+        <div class="one-time">ONE-TIME PAYMENT • NO RECURRING PAYMENTS</div>
+        <ul>
+          <li>Business, professional & social guidance</li>
+          <li>Business Credit Blueprint workbook</li>
+          <li>Document drafting for emails, proposals & business documents</li>
+          <li>Practical business-credit and financing-readiness guidance</li>
+          <li>Tools and resources for building your business</li>
+        </ul>
+        <a class="plan-btn" href="#">Get EIN-trepreneur AI — $100</a>
+      </div>
+    </div>
+    <p class="disclaimer" style="margin-top:26px;">This page is configured as a one-time $100 purchase. A real checkout still needs to be connected to a payment processor using a server-side integration. The assistant provides general business, professional, and social guidance; it isn't a lawyer, accountant, or financial advisor. Confirm legal, tax, lending, and regulatory specifics with the appropriate professional or institution.</p>
+  </section>
+
+  <footer>
+    <div><h4>FEPA LLC</h4><p>EIN-trepreneur AI — a personal business assistant.</p><p>Registered LLC, State of Georgia</p></div>
+    <div><h4>Also from FEPA</h4><p>Business Credit Blueprint</p><p>Contract, Onboarding & Money Tracker kits</p></div>
+    <div><h4>Legal</h4><p>© 2026 FEPA LLC. All rights reserved.</p></div>
+  </footer>
+</div>
+
+<script>
+const chatBody=document.getElementById('chatBody'),chatInput=document.getElementById('chatInput'),chatSend=document.getElementById('chatSend'),chatChips=document.getElementById('chatChips');
+let history=[];
+function addMessage(role,text){const div=document.createElement('div');div.className='msg '+role;div.textContent=text;chatBody.appendChild(div);chatBody.scrollTop=chatBody.scrollHeight;return div;}
+async function sendMessage(text){
+  if(!text.trim())return;
+  addMessage('user',text);history.push({role:'user',content:text});chatInput.value='';chatSend.disabled=true;chatChips.style.display='none';
+  const thinking=addMessage('assistant','Thinking…');
+  try{
+    /* IMPORTANT: replace this direct browser request with your secure FEPA backend endpoint.
+       Example: fetch('/api/chat', { ... }) where the AI API key is stored server-side. */
+    const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})});
+    const data=await response.json();
+    const textBlock=(data.content||[]).map(b=>b.text||'').join('\n').trim();
+    thinking.textContent=textBlock||"Something went wrong on that request — try asking again.";
+    if(textBlock)history.push({role:'assistant',content:textBlock});
+  }catch(err){thinking.textContent="Couldn't reach the assistant just now — try again in a moment.";}
+  finally{chatSend.disabled=false;}
+}
+chatSend.addEventListener('click',()=>sendMessage(chatInput.value));
+chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage(chatInput.value)});
+chatChips.querySelectorAll('.chip').forEach(chip=>chip.addEventListener('click',()=>sendMessage(chip.getAttribute('data-q'))));
+</script>
+</body>
+</html>
